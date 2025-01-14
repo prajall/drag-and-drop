@@ -97,6 +97,7 @@ const KanbanBoard = () => {
         <SortableContext items={columnIds}>
           {columns.map((column) => (
             <Column
+              onDeleteTask={deleteTask}
               key={column.id}
               column={column}
               onDeleteColumn={deleteColumn}
@@ -117,6 +118,7 @@ const KanbanBoard = () => {
             </div>
           ) : activeColumn ? (
             <Column
+              onDeleteTask={deleteTask}
               key={activeColumn.id}
               column={activeColumn}
               onDeleteColumn={deleteColumn}
@@ -225,13 +227,16 @@ const KanbanBoard = () => {
   function deleteColumn(id: string) {
     setColumns(() => columns.filter((col) => col.id !== id));
   }
+  function deleteTask(id: string) {
+    setTasks(() => tasks.filter((task) => task.id !== id));
+  }
 
-  function addTask(columnId: string) {
+  function addTask(columnId: string, title: string) {
     const ids = tasks.map((task) => parseInt(task.id.split("T")[1], 10)) || [];
     const maxId = ids.length > 0 ? Math.max(...ids) : 0;
     setTasks((prev) => [
       ...prev,
-      { id: "T" + (maxId + 1).toString(), columnId, title: "Title" },
+      { id: "T" + (maxId + 1).toString(), columnId, title },
     ]);
   }
 };

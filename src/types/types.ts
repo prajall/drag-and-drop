@@ -6,6 +6,5 @@ export type ColumnProp = {
 export type TaskProp = {
   id: string;
   title: string;
-  description?: string;
   columnId: string;
 };

@@ -7,8 +7,8 @@ import {
 import { ColumnProp, TaskProp } from "@/types/types";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EllipsisVertical } from "lucide-react";
-import React, { useMemo } from "react";
+import { EllipsisVertical, PlusCircle } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import Task from "./Task";
 
@@ -18,12 +18,19 @@ const Column = React.memo(
     onDeleteColumn,
     onAddTask,
     tasks,
+    onDeleteTask,
   }: {
     column: ColumnProp;
     onDeleteColumn: (id: string) => void;
-    onAddTask: (id: string) => void;
+    onAddTask: (id: string, title: string) => void;
     tasks: TaskProp[];
+    onDeleteTask?: (id: string) => void;
   }) => {
+    //states
+    const [showAddForm, setShowAddForm] = useState<boolean>(false);
+    const [inputTitle, setInputTitle] = useState<string>("");
+    const inputRef = useRef(null);
+
     const { id, title } = column;
 
     const {
@@ -49,6 +56,28 @@ const Column = React.memo(
 
     const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showAddForm && e.key === "Escape") {
+        setInputTitle("");
+        setShowAddForm(false);
+      }
+    };
+
+    useEffect(() => {
+      document.addEventListener("keydown", handleKeyDown);
+
+      // Cleanup function to remove the event listener
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [showAddForm]);
+
+    function handleSubmit(e: React.FormEvent) {
+      e.preventDefault();
+      onAddTask(column.id, inputTitle);
+      setShowAddForm(false);
+    }
+
     if (isDragging) {
       return (
         <div
@@ -62,33 +91,19 @@ const Column = React.memo(
             className="opacity-0 w-full flex justify-between cursor-grab active:cursor-grabbing"
           >
             {title}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="text-gray-700">
-                <EllipsisVertical size={16} />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => onDeleteColumn(column.id)}>
-                  Delete
-                </DropdownMenuItem>
-                <DropdownMenuItem>Edit</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           {/* Task List */}
           <div className="opacity-0 gap-2 flex flex-col py-4">
-            <SortableContext items={taskIds}>
-              {tasks.map((task) => (
-                <Task task={task} key={task.id} />
-              ))}
-            </SortableContext>
+            {tasks.map((task) => (
+              <Task onDeleteTask={() => {}} task={task} key={task.id} />
+            ))}
           </div>
 
           {/* Add Task Button */}
           <Button
             variant="secondary"
             className="opacity-0 mt-auto w-full py-2 rounded-md duration-200"
-            onClick={() => onAddTask(column.id)}
           >
             Add Task
           </Button>
@@ -125,19 +140,37 @@ const Column = React.memo(
         <div className="gap-2 flex flex-col py-4">
           <SortableContext items={taskIds}>
             {tasks.map((task) => (
-              <Task task={task} key={task.id} />
+              <Task task={task} key={task.id} onDeleteTask={onDeleteTask} />
             ))}
           </SortableContext>
         </div>
 
         {/* Add Task Button */}
-        <Button
-          variant="secondary"
-          className="mt-auto w-full py-2 rounded-md duration-200"
-          onClick={() => onAddTask(column.id)}
-        >
-          Add Task
-        </Button>
+        {!showAddForm && (
+          <Button
+            variant="secondary"
+            className="mt-auto w-full py-2 shadow-none flex justify-start "
+            // onClick={() => onAddTask(column.id)}
+            onClick={() => setShowAddForm(true)}
+          >
+            <PlusCircle />
+            Add Task
+          </Button>
+        )}
+        {showAddForm && (
+          <form onSubmit={handleSubmit}>
+            <input
+              ref={inputRef}
+              type="text"
+              className="mt-auto w-full py-2 px-2 font-medium text-sm shadow-none rounded-md flex justify-start"
+              value={inputTitle}
+              onChange={(e) => {
+                setInputTitle(e.target.value);
+              }}
+              placeholder="Enter New Task"
+            />
+          </form>
+        )}
       </div>
     );
   }
