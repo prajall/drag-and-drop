@@ -54,7 +54,7 @@ const Column = React.memo(
         <div
           ref={setNodeRef}
           style={style}
-          className={`w-full opacity-50 border border-gray-700 min-h-52 bg-gray-50 p-3 rounded-lg font-semibold flex flex-col relative -z-50`}
+          className={`w-full opacity-50 border border-gray-300 min-h-52 bg-gray-50 p-3 rounded-lg font-semibold flex flex-col relative -z-50`}
         >
           <div
             {...listeners}

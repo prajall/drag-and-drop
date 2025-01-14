@@ -2,7 +2,11 @@ import { ColumnProp, TaskProp } from "@/types/types";
 import { useEffect, useMemo, useState } from "react";
 import Column from "../components/Column";
 import NewColumn from "../components/NewColumn";
-import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import {
   closestCenter,
   DndContext,
@@ -12,23 +16,73 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 
 const KanbanBoard = () => {
+  //states
   const [columns, setColumns] = useState<ColumnProp[]>([]);
   const [tasks, setTasks] = useState<TaskProp[]>([]);
   const [activeTask, setActiveTask] = useState<TaskProp | null>(null);
   const [activeColumn, setActiveColumn] = useState<ColumnProp | null>(null);
+
+  // constants
   const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 3 },
+    }),
+    useSensor(KeyboardSensor, {
+      // coordinateGetter: customCoordinateGetter,
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
+  // useEffects
+
+  //use Local Storage to store the tasks
   useEffect(() => {
-    console.log("Active Task:", activeTask);
+    const localColumns = localStorage.getItem("columns");
+
+    if (localColumns) {
+      try {
+        const parsedColumns = JSON.parse(localColumns);
+        setColumns(parsedColumns);
+      } catch (error) {
+        console.error("Error parsing columns from localStorage", error);
+      }
+    } else {
+      console.log("No columns found in localStorage.");
+    }
+  }, []);
+
+  useEffect(() => {
+    const localTasks = localStorage.getItem("tasks");
+
+    if (localTasks) {
+      try {
+        const parsedColumns = JSON.parse(localTasks);
+        setTasks(parsedColumns);
+      } catch (error) {
+        console.error("Error parsing columns from localStorage", error);
+      }
+    } else {
+      console.log("No columns found in localStorage.");
+    }
+  }, []);
+
+  // Save columns to localStorage when it changes
+  useEffect(() => {
+    if (columns.length > 0) {
+      localStorage.setItem("columns", JSON.stringify(columns));
+    }
+  }, [columns]);
+
+  useEffect(() => {
+    if (tasks.length > 0) {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
   }, [tasks]);
 
   return (
@@ -76,6 +130,7 @@ const KanbanBoard = () => {
   );
 
   function onDragStart(e: DragEndEvent) {
+    console.log("Drag start", e);
     const activeType = e.active.data.current?.type;
     if (activeType === "task") {
       const activeTask = tasks.find((task) => task.id === e.active.id) || null;
@@ -88,6 +143,7 @@ const KanbanBoard = () => {
   }
 
   function onDragEnd(e: DragEndEvent) {
+    console.log("Drag end", e);
     setActiveColumn(null);
     setActiveTask(null);
     const { active, over } = e;
