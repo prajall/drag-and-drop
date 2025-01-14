@@ -75,6 +75,8 @@ A Kanban board application built with React + Vite + Typescript and the DnD Kit 
 4. Move the selected element in desired location.
 5. Press `space` or `Enter` to set the item in the new position.
 
+6. Press `Shift + N` to open a New Board Dialog modal.
+
 ---
 
 ## Known Limitations/Trade-offs

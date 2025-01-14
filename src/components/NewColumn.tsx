@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { ColumnProp } from "@/types/types";
 
@@ -33,6 +33,18 @@ const NewColumn: React.FC<NewColumnProp> = ({ onAddNewColumn, columns }) => {
     setTitle("");
     setDialogOpen(false);
   };
+
+  useEffect(() => {
+    if (dialogOpen) {
+      return;
+    }
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      console.log(e);
+      if (e.key === "N" && e.shiftKey === true) {
+        setDialogOpen(true);
+      }
+    });
+  }, []);
 
   return (
     <Dialog open={dialogOpen} onOpenChange={(value) => setDialogOpen(value)}>
