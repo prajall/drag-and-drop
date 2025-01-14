@@ -36,11 +36,9 @@ const NewColumn: React.FC<NewColumnProp> = ({ onAddNewColumn, columns }) => {
 
   return (
     <Dialog open={dialogOpen} onOpenChange={(value) => setDialogOpen(value)}>
-      <DialogTrigger>
-        <button className="w-full h-48 bg-gray-100 duration-300 hover:bg-gray-200 text-gray-700 hover:text-gray-800 flex flex-col gap-4 justify-center items-center rounded-md">
-          <CirclePlus size={40} fontWeight={100} />
-          <p className="font-semibold">Add New Board</p>
-        </button>
+      <DialogTrigger className="w-full h-10 border border-gray-300 bg-gray-100 duration-300 hover:bg-gray-200 text-gray-700 hover:text-gray-800 gap-2 flex justify-center items-center rounded-md">
+        <CirclePlus size={18} />
+        <p className="font-semibold">Add New Board</p>
       </DialogTrigger>
       <DialogContent className="w-96">
         <DialogHeader>

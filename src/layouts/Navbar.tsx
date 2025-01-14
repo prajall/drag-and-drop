@@ -14,12 +14,6 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <button className="relative text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
               <Bell className="w-6 h-6" />
-              <span
-                className={cn(
-                  "absolute  top-0 right-0 inline-flex items-center justify-center",
-                  "w-2 h-2 bg-red-500 text-white text-xs font-bold rounded-full"
-                )}
-              ></span>
             </button>
 
             {/* User Avatar */}

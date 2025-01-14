@@ -144,6 +144,11 @@ const Column = React.memo(
               <Task task={task} key={task.id} onDeleteTask={onDeleteTask} />
             ))}
           </SortableContext>
+          {tasks.length == 0 && (
+            <p className="text-sm font-medium text-gray-300 text-center mt-2">
+              No Task for "{column.title}""
+            </p>
+          )}
           {showAddForm && (
             <form onSubmit={handleSubmit}>
               <input
