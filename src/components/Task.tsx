@@ -25,6 +25,18 @@ const Task = React.memo(({ task }: { task: TaskProp }) => {
     zIndex: isDragging ? 999 : "auto",
   };
 
+  //When dragging, Just show the preview of the task
+  if(isDragging){
+    return  <div
+    style={style}
+    ref={setNodeRef}
+    {...attributes}
+    {...listeners}
+    className="w-full h-10  bg-white/50  px-2 py-2 rounded-lg font-medium"
+  >
+  </div>
+  }
+
   return (
     <div
       style={style}

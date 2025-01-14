@@ -22,12 +22,12 @@ const NewColumn: React.FC<NewColumnProp> = ({ onAddNewColumn, columns }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const ids = columns.map((column) => parseInt(column.id, 10)) || [];
+    const ids = columns.map((column) => parseInt(column.id.split("C")[1], 10)) || [];
     const maxId = ids.length > 0 ? Math.max(...ids) : 0;
     console.log(maxId);
 
     if (title.trim() !== "") {
-      onAddNewColumn((maxId + 1).toString(), title);
+      onAddNewColumn("C"+(maxId + 1).toString(), title);
     }
     setTitle("");
     setDialogOpen(false);

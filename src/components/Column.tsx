@@ -49,11 +49,58 @@ const Column = React.memo(
 
     const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
 
+    if (isDragging) {
+      return (
+        <div
+          ref={setNodeRef}
+          style={style}
+          className={`w-full opacity-50 border border-gray-700 min-h-52 bg-gray-50 p-3 rounded-lg font-semibold flex flex-col relative -z-50`}
+        >
+          <div
+            {...listeners}
+            {...attributes}
+            className="opacity-0 w-full flex justify-between cursor-grab active:cursor-grabbing"
+          >
+            {title}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-gray-700">
+                <EllipsisVertical size={16} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => onDeleteColumn(column.id)}>
+                  Delete
+                </DropdownMenuItem>
+                <DropdownMenuItem>Edit</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Task List */}
+          <div className="opacity-0 gap-2 flex flex-col py-4">
+            <SortableContext items={taskIds}>
+              {tasks.map((task) => (
+                <Task task={task} key={task.id} />
+              ))}
+            </SortableContext>
+          </div>
+
+          {/* Add Task Button */}
+          <Button
+            variant="secondary"
+            className="opacity-0 mt-auto w-full py-2 rounded-md duration-200"
+            onClick={() => onAddTask(column.id)}
+          >
+            Add Task
+          </Button>
+        </div>
+      );
+    }
+
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className={`w-full min-h-52 bg-gray-100 p-3 rounded-lg font-semibold ease-in-out flex flex-col`}
+        className={`w-full min-h-52 bg-gray-100 p-3 rounded-lg font-semibold ease-in-out flex flex-col relative z-50`}
       >
         <div
           {...listeners}
