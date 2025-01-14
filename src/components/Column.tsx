@@ -29,8 +29,7 @@ const Column = React.memo(
     //states
     const [showAddForm, setShowAddForm] = useState<boolean>(false);
     const [inputTitle, setInputTitle] = useState<string>("");
-    const inputRef = useRef(null);
-
+    const inputRef = useRef<HTMLInputElement | null>(null);
     const { id, title } = column;
 
     const {
@@ -76,6 +75,7 @@ const Column = React.memo(
       e.preventDefault();
       onAddTask(column.id, inputTitle);
       setShowAddForm(false);
+      setInputTitle("");
     }
 
     if (isDragging) {
@@ -83,7 +83,7 @@ const Column = React.memo(
         <div
           ref={setNodeRef}
           style={style}
-          className={`w-full opacity-50 border border-gray-300 min-h-52 bg-gray-50 p-3 rounded-lg font-semibold flex flex-col relative -z-50`}
+          className={`w-full opacity-50 border border-gray-300 min-h-96 bg-gray-50 p-3 rounded-lg font-semibold flex flex-col relative -z-50`}
         >
           <div
             {...listeners}
@@ -115,9 +115,10 @@ const Column = React.memo(
       <div
         ref={setNodeRef}
         style={style}
-        className={`w-full min-h-52 bg-gray-100 p-3 rounded-lg font-semibold ease-in-out flex flex-col relative z-50`}
+        className={`w-full min-h-96 bg-gray-100 p-3 rounded-lg font-semibold ease-in-out flex flex-col relative z-50`}
       >
         <div
+          id={`column-${column.id}`} // Id for adding keyboard event
           {...listeners}
           {...attributes}
           className="w-full flex justify-between cursor-grab active:cursor-grabbing"
@@ -143,34 +144,33 @@ const Column = React.memo(
               <Task task={task} key={task.id} onDeleteTask={onDeleteTask} />
             ))}
           </SortableContext>
+          {showAddForm && (
+            <form onSubmit={handleSubmit}>
+              <input
+                ref={inputRef}
+                type="text"
+                className="mt-auto w-full py-2 px-2 font-medium text-sm shadow-none focus:outline-gray-500 rounded-md flex justify-start"
+                value={inputTitle}
+                onChange={(e) => {
+                  setInputTitle(e.target.value);
+                }}
+                placeholder="Enter New Task"
+              />
+            </form>
+          )}
         </div>
 
-        {/* Add Task Button */}
-        {!showAddForm && (
-          <Button
-            variant="secondary"
-            className="mt-auto w-full py-2 shadow-none flex justify-start "
-            // onClick={() => onAddTask(column.id)}
-            onClick={() => setShowAddForm(true)}
-          >
-            <PlusCircle />
-            Add Task
-          </Button>
-        )}
-        {showAddForm && (
-          <form onSubmit={handleSubmit}>
-            <input
-              ref={inputRef}
-              type="text"
-              className="mt-auto w-full py-2 px-2 font-medium text-sm shadow-none rounded-md flex justify-start"
-              value={inputTitle}
-              onChange={(e) => {
-                setInputTitle(e.target.value);
-              }}
-              placeholder="Enter New Task"
-            />
-          </form>
-        )}
+        <Button
+          variant="secondary"
+          className="mt-auto w-full p-0 py-2 shadow-none flex  "
+          onClick={() => {
+            setShowAddForm(true);
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
+        >
+          <PlusCircle />
+          Add Task
+        </Button>
       </div>
     );
   }

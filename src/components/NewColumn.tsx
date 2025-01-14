@@ -22,12 +22,13 @@ const NewColumn: React.FC<NewColumnProp> = ({ onAddNewColumn, columns }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const ids = columns.map((column) => parseInt(column.id.split("C")[1], 10)) || [];
+    const ids =
+      columns.map((column) => parseInt(column.id.split("C")[1], 10)) || [];
     const maxId = ids.length > 0 ? Math.max(...ids) : 0;
     console.log(maxId);
 
     if (title.trim() !== "") {
-      onAddNewColumn("C"+(maxId + 1).toString(), title);
+      onAddNewColumn("C" + (maxId + 1).toString(), title);
     }
     setTitle("");
     setDialogOpen(false);
@@ -41,11 +42,11 @@ const NewColumn: React.FC<NewColumnProp> = ({ onAddNewColumn, columns }) => {
           <p className="font-semibold">Add New Board</p>
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-96">
         <DialogHeader>
           <DialogTitle>Add new Board</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 w-full">
           <div className="">
             <input
               type="text"
@@ -53,13 +54,13 @@ const NewColumn: React.FC<NewColumnProp> = ({ onAddNewColumn, columns }) => {
               name="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 border border-gray-100 focus:outline-gray-300 focus:outline rounded-md"
+              className="w-full max-w-full p-2 border border-gray-100 focus:outline-gray-300 focus:outline rounded-md"
               placeholder="Title"
               required
             />
           </div>
           <Button type="submit" variant={"secondary"} className="">
-            Submit
+            Add
           </Button>
         </form>
       </DialogContent>

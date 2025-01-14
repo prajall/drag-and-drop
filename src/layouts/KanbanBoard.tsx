@@ -17,6 +17,7 @@ import {
   useSensor,
   useSensors,
   KeyboardSensor,
+  useDndContext,
 } from "@dnd-kit/core";
 
 const KanbanBoard = () => {
@@ -25,9 +26,16 @@ const KanbanBoard = () => {
   const [tasks, setTasks] = useState<TaskProp[]>([]);
   const [activeTask, setActiveTask] = useState<TaskProp | null>(null);
   const [activeColumn, setActiveColumn] = useState<ColumnProp | null>(null);
+  const [canChangeFocus, setCanChangeFocus] = useState<boolean>(true);
+
+  const [focusedColumnIndex, setFocusedColumnIndex] = useState<number | null>(
+    null
+  );
+  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null);
 
   // constants
   const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
+  const { active } = useDndContext();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -39,11 +47,29 @@ const KanbanBoard = () => {
     })
   );
 
-  // useEffects
+  /* useEffects */
 
-  //use Local Storage to store the tasks
+  //Populate tasks and columns from local Storage
   useEffect(() => {
     const localColumns = localStorage.getItem("columns");
+    const localTasks = localStorage.getItem("tasks");
+    const alreadyLoggedIn = localStorage.getItem("alreadyLoggedIn") || false;
+
+    if (!alreadyLoggedIn) {
+      setColumns([
+        { id: "C7", title: "📋 To Do" },
+        { id: "C5", title: "🔘 In Progress" },
+        { id: "C6", title: "✔️ Completed" },
+      ]);
+      setTasks([
+        { id: "T5", columnId: "C6", title: "Sketch" },
+        { id: "T1", columnId: "C6", title: "Make Breakfast" },
+        { id: "T3", columnId: "C7", title: "Fix lighting in the room" },
+        { id: "T6", columnId: "C5", title: "College project" },
+        { id: "T4", columnId: "C5", title: "Prepare for exam" },
+      ]);
+      localStorage.setItem("alreadyLoggedIn", "true");
+    }
 
     if (localColumns) {
       try {
@@ -52,13 +78,7 @@ const KanbanBoard = () => {
       } catch (error) {
         console.error("Error parsing columns from localStorage", error);
       }
-    } else {
-      console.log("No columns found in localStorage.");
     }
-  }, []);
-
-  useEffect(() => {
-    const localTasks = localStorage.getItem("tasks");
 
     if (localTasks) {
       try {
@@ -67,8 +87,6 @@ const KanbanBoard = () => {
       } catch (error) {
         console.error("Error parsing columns from localStorage", error);
       }
-    } else {
-      console.log("No columns found in localStorage.");
     }
   }, []);
 
@@ -84,6 +102,152 @@ const KanbanBoard = () => {
       localStorage.setItem("tasks", JSON.stringify(tasks));
     }
   }, [tasks]);
+
+  /* -------------------------------------------------------------------------------
+             For keyboard events to select tasks and columns 
+   --------------------------------------------------------------------------------- */
+
+  // Update focuses/select.
+  useEffect(() => {
+    // If we have a focusedColumnIndex but no tasks are focused, focus the column DOM element
+    if (
+      focusedColumnIndex !== null &&
+      (focusedTaskIndex === null || focusedTaskIndex < 0)
+    ) {
+      const columnId = columns[focusedColumnIndex]?.id;
+      const colElement = document.getElementById(`column-${columnId}`);
+      if (colElement) {
+        colElement.focus();
+      }
+    }
+    // If we have a valid focused column & focused task, focus the task DOM element
+    else if (
+      focusedColumnIndex !== null &&
+      focusedColumnIndex >= 0 &&
+      focusedTaskIndex !== null &&
+      focusedTaskIndex >= 0
+    ) {
+      const columnId = columns[focusedColumnIndex].id;
+      // filter tasks for that column
+      const tasksOfThisColumn = tasks.filter((t) => t.columnId === columnId);
+      const taskId = tasksOfThisColumn[focusedTaskIndex]?.id;
+      const taskElement = document.getElementById(`task-${taskId}`);
+      if (taskElement) {
+        taskElement.focus();
+      }
+    }
+  }, [focusedColumnIndex, focusedTaskIndex, columns, tasks]);
+
+  //Arrow key listeners to switch the selected items
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const { key } = e;
+
+      if (e.key == " " || e.key == "Enter") {
+        setCanChangeFocus((prev) => !prev);
+      }
+
+      console.log("Can change focus:", canChangeFocus, e.key);
+
+      if (!canChangeFocus) {
+        return;
+      }
+
+      // 1) If nothing is focused yet:
+      if (focusedColumnIndex === null && focusedTaskIndex === null) {
+        if (
+          key === "ArrowLeft" ||
+          key === "ArrowRight" ||
+          key === "ArrowDown" ||
+          key === "ArrowUp"
+        ) {
+          // Focus the first column
+          if (columns.length > 0) {
+            setFocusedColumnIndex(0);
+          }
+        }
+        return;
+      }
+
+      // 2) If a column is focused but no task:
+      if (
+        focusedColumnIndex !== null &&
+        (focusedTaskIndex === null || focusedTaskIndex < 0)
+      ) {
+        switch (key) {
+          case "ArrowRight": {
+            // Move to the next column if exists
+            const nextIndex = focusedColumnIndex + 1;
+            if (nextIndex < columns.length) {
+              setFocusedColumnIndex(nextIndex);
+            }
+            break;
+          }
+          case "ArrowLeft": {
+            // Move to the previous column if exists
+            const prevIndex = focusedColumnIndex - 1;
+            if (prevIndex >= 0) {
+              setFocusedColumnIndex(prevIndex);
+            }
+            break;
+          }
+          case "ArrowDown": {
+            // Focus the first task in the currently focused column
+            const colId = columns[focusedColumnIndex].id;
+            const tasksOfThisColumn = tasks.filter((t) => t.columnId === colId);
+            if (tasksOfThisColumn.length > 0) {
+              setFocusedTaskIndex(0);
+            }
+            break;
+          }
+        }
+      }
+      // 3) If a task is focused:
+      else if (focusedColumnIndex !== null && focusedTaskIndex !== null) {
+        const colId = columns[focusedColumnIndex].id;
+        const tasksOfThisColumn = tasks.filter((t) => t.columnId === colId);
+        switch (key) {
+          case "ArrowDown": {
+            const nextTaskIndex = focusedTaskIndex + 1;
+            if (nextTaskIndex < tasksOfThisColumn.length) {
+              setFocusedTaskIndex(nextTaskIndex);
+            }
+            break;
+          }
+          case "ArrowUp": {
+            // Move to previous task if possible
+            const prevTaskIndex = focusedTaskIndex - 1;
+            if (prevTaskIndex >= 0) {
+              setFocusedTaskIndex(prevTaskIndex);
+            }
+
+            break;
+          }
+          case "ArrowRight":
+          case "ArrowLeft": {
+            setFocusedTaskIndex(null);
+            if (key === "ArrowRight") {
+              const nextIndex = focusedColumnIndex + 1;
+              if (nextIndex < columns.length) {
+                setFocusedColumnIndex(nextIndex);
+              }
+            } else {
+              const prevIndex = focusedColumnIndex - 1;
+              if (prevIndex >= 0) {
+                setFocusedColumnIndex(prevIndex);
+              }
+            }
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [focusedColumnIndex, focusedTaskIndex, columns, tasks]);
 
   return (
     <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 auto-rows-auto">
@@ -112,9 +276,8 @@ const KanbanBoard = () => {
         {/* Drag Overlay */}
         <DragOverlay>
           {activeTask ? (
-            <div className="w-full border bg-gray-50 px-2 py-2 rounded-lg font-medium">
+            <div className="w-full border bg-gray-50 px-2 py-2 rounded-lg font-medium text-sm">
               {activeTask.title}
-              {activeTask.id}
             </div>
           ) : activeColumn ? (
             <Column
@@ -133,6 +296,7 @@ const KanbanBoard = () => {
 
   function onDragStart(e: DragEndEvent) {
     console.log("Drag start", e);
+    // setCanChangeFocus(false);
     const activeType = e.active.data.current?.type;
     if (activeType === "task") {
       const activeTask = tasks.find((task) => task.id === e.active.id) || null;
@@ -144,8 +308,10 @@ const KanbanBoard = () => {
     }
   }
 
+  //functions
   function onDragEnd(e: DragEndEvent) {
     console.log("Drag end", e);
+    // setCanChangeFocus(true);
     setActiveColumn(null);
     setActiveTask(null);
     const { active, over } = e;

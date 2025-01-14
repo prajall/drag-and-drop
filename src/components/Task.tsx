@@ -33,7 +33,7 @@ const Task = React.memo(
       zIndex: isDragging ? 999 : "auto",
     };
 
-    //When dragging, Just show the preview of the task
+    //When dragging, how the preview of the task
     if (isDragging) {
       return (
         <div
@@ -41,21 +41,21 @@ const Task = React.memo(
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-          className="w-full h-10  bg-white/50  px-2 py-2 rounded-lg font-medium"
+          className="w-full h-10  bg-white/50  px-2 py-2 rounded-lg text-sm font-medium"
         ></div>
       );
     }
 
     return (
       <div
+        id={`task-${task.id}`}
         style={style}
         ref={setNodeRef}
         {...attributes}
         {...listeners}
         className="w-full border bg-gray-50 px-2 py-2 rounded-lg font-medium text-sm flex items-center justify-between"
       >
-        {task.title}
-        {task.id}
+        <p>{task.title}</p>
 
         <button
           onClick={() => (onDeleteTask ? onDeleteTask(task.id) : () => {})}
