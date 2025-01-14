@@ -155,6 +155,10 @@ const Column = React.memo(
                   setInputTitle(e.target.value);
                 }}
                 placeholder="Enter New Task"
+                onBlur={() => {
+                  setInputTitle(""); // Clear the input
+                  setShowAddForm(false); // Hide the form
+                }}
               />
             </form>
           )}

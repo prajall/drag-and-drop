@@ -143,10 +143,6 @@ const KanbanBoard = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const { key } = e;
 
-      if (e.key == " " || e.key == "Enter") {
-        setCanChangeFocus((prev) => !prev);
-      }
-
       console.log("Can change focus:", canChangeFocus, e.key);
 
       if (!canChangeFocus) {
@@ -273,7 +269,6 @@ const KanbanBoard = () => {
 
         <NewColumn onAddNewColumn={addNewColumn} columns={columns} />
 
-        {/* Drag Overlay */}
         <DragOverlay>
           {activeTask ? (
             <div className="w-full border bg-gray-50 px-2 py-2 rounded-lg font-medium text-sm">
@@ -294,9 +289,11 @@ const KanbanBoard = () => {
     </div>
   );
 
+  //additional functions
   function onDragStart(e: DragEndEvent) {
     console.log("Drag start", e);
-    // setCanChangeFocus(false);
+    //prevent selection change after selecting an element
+    setCanChangeFocus(false);
     const activeType = e.active.data.current?.type;
     if (activeType === "task") {
       const activeTask = tasks.find((task) => task.id === e.active.id) || null;
@@ -311,7 +308,7 @@ const KanbanBoard = () => {
   //functions
   function onDragEnd(e: DragEndEvent) {
     console.log("Drag end", e);
-    // setCanChangeFocus(true);
+    setCanChangeFocus(true);
     setActiveColumn(null);
     setActiveTask(null);
     const { active, over } = e;
