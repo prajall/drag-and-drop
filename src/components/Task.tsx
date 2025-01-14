@@ -1,13 +1,7 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { TaskProp } from "@/types/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EllipsisVertical, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 import React from "react";
 
 const Task = React.memo(
@@ -63,19 +57,6 @@ const Task = React.memo(
         {task.title}
         {task.id}
 
-        {/* <DropdownMenu>
-          <DropdownMenuTrigger className="text-gray-700">
-            <EllipsisVertical size={16} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
-              onClick={() => (onDeleteTask ? onDeleteTask(task.id) : () => {})}
-            >
-              Delete
-            </DropdownMenuItem>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu> */}
         <button
           onClick={() => (onDeleteTask ? onDeleteTask(task.id) : () => {})}
           className="text-gray-600"
