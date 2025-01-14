@@ -1,24 +1,23 @@
 import { ColumnProp, TaskProp } from "@/types/types";
-import { useEffect, useMemo, useState } from "react";
-import Column from "../components/Column";
-import NewColumn from "../components/NewColumn";
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import {
-  closestCenter,
-  DndContext,
-  DragOverlay,
-  DragEndEvent,
-  DragOverEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  KeyboardSensor,
-  useDndContext,
-} from "@dnd-kit/core";
+import { useEffect, useMemo, useState } from "react";
+import Column from "../components/Column";
+import NewColumn from "../components/NewColumn";
 
 const KanbanBoard = () => {
   //states
@@ -35,7 +34,6 @@ const KanbanBoard = () => {
 
   // constants
   const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
-  const { active } = useDndContext();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
