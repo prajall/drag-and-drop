@@ -25,12 +25,6 @@ const KanbanBoard = () => {
   const [tasks, setTasks] = useState<TaskProp[]>([]);
   const [activeTask, setActiveTask] = useState<TaskProp | null>(null);
   const [activeColumn, setActiveColumn] = useState<ColumnProp | null>(null);
-  const [canChangeFocus, setCanChangeFocus] = useState<boolean>(true);
-
-  const [focusedColumnIndex, setFocusedColumnIndex] = useState<number | null>(
-    null
-  );
-  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null);
 
   // constants
   const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -102,9 +96,177 @@ const KanbanBoard = () => {
     }
   }, [tasks]);
 
-  /* -------------------------------------------------------------------------------
-             For keyboard events to select tasks and columns 
-   --------------------------------------------------------------------------------- */
+  return (
+    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 auto-rows-auto ">
+      <DndContext
+        collisionDetection={closestCenter}
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+      >
+        <SortableContext items={columnIds}>
+          {columns.map((column) => (
+            <Column
+              onDeleteTask={deleteTask}
+              key={column.id}
+              column={column}
+              onDeleteColumn={deleteColumn}
+              onAddTask={addTask}
+              tasks={tasks.filter((task) => task.columnId === column.id)}
+            />
+          ))}
+        </SortableContext>
+
+        <NewColumn onAddNewColumn={addNewColumn} columns={columns} />
+
+        <DragOverlay>
+          {activeTask ? (
+            <div className="w-full border bg-gray-50 px-2 py-2 rounded-lg font-medium text-sm">
+              {activeTask.title}
+            </div>
+          ) : activeColumn ? (
+            <Column
+              onDeleteTask={deleteTask}
+              key={activeColumn.id}
+              column={activeColumn}
+              onDeleteColumn={deleteColumn}
+              onAddTask={addTask}
+              tasks={tasks.filter((task) => task.columnId === activeColumn.id)}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
+  );
+
+  //additional functions
+  function onDragStart(e: DragEndEvent) {
+    console.log("Drag start", e);
+    //prevent selection change after selecting an element
+    const activeType = e.active.data.current?.type;
+    if (activeType === "task") {
+      const activeTask = tasks.find((task) => task.id === e.active.id) || null;
+      setActiveTask(activeTask);
+    } else if (activeType === "column") {
+      const activeColumn =
+        columns.find((column) => column.id === e.active.id) || null;
+      setActiveColumn(activeColumn);
+    }
+  }
+
+  //functions
+  function onDragEnd(e: DragEndEvent) {
+    console.log("Drag end", e);
+    setActiveColumn(null);
+    setActiveTask(null);
+    const { active, over } = e;
+    const activeType = active.data.current?.type;
+
+    if (!over) return;
+
+    if (activeType === "column") {
+      // Handle column reordering
+      const activeIndex = columns.findIndex((col) => col.id === active.id);
+      const overIndex = columns.findIndex((col) => col.id === over.id);
+
+      if (activeIndex !== overIndex && overIndex !== -1) {
+        const newColumns = arrayMove(columns, activeIndex, overIndex);
+        setColumns(newColumns);
+      }
+    } else if (activeType === "task") {
+      // Handle task dragging
+      const activeTaskIndex = tasks.findIndex((task) => task.id === active.id);
+      const overType = over.data.current?.type;
+
+      if (overType === "task") {
+        // Reordering tasks within the same column
+        const overTaskIndex = tasks.findIndex((task) => task.id === over.id);
+        if (activeTaskIndex !== overTaskIndex) {
+          const newTasks = arrayMove(tasks, activeTaskIndex, overTaskIndex);
+          setTasks(newTasks);
+        }
+      } else if (overType === "column") {
+        // Moving tasks between columns
+        const overColumnId = over.id;
+
+        setTasks((prevTasks) => {
+          const updatedTasks = [...prevTasks];
+          updatedTasks[activeTaskIndex].columnId = overColumnId.toString();
+          return updatedTasks;
+        });
+      }
+    }
+  }
+
+  function onDragOver(e: DragOverEvent) {
+    const isActiveTask = e.active.data.current?.type === "task";
+    const isOverTask = e.over?.data.current?.type === "task";
+
+    // If dragging a task
+    if (isActiveTask) {
+      if (isOverTask) {
+        // Handle task reorder inside the same column
+        const activeIndex = tasks.findIndex((task) => task.id === e.active.id);
+        const overIndex = tasks.findIndex((task) => task.id === e.over?.id);
+
+        if (activeIndex !== overIndex) {
+          const newTasks = arrayMove(tasks, activeIndex, overIndex);
+          setTasks(newTasks);
+          tasks[activeIndex].columnId = tasks[overIndex].columnId;
+        }
+      } else {
+        // Dropping task on an empty column (no task)
+        const overColumnId = e.over?.id;
+        if (overColumnId) {
+          setTasks((prevTasks) => {
+            const activeIndex = prevTasks.findIndex(
+              (task) => task.id === e.active.id
+            );
+            const newTasks = [...prevTasks];
+            newTasks[activeIndex].columnId = overColumnId.toString();
+            return newTasks;
+          });
+        }
+      }
+    }
+  }
+
+  function addNewColumn(id: string, title: string) {
+    setColumns((columns) => [...columns, { id, title }]);
+  }
+
+  function deleteColumn(id: string) {
+    setColumns(() => columns.filter((col) => col.id !== id));
+  }
+  function deleteTask(id: string) {
+    setTasks(() => tasks.filter((task) => task.id !== id));
+  }
+
+  function addTask(columnId: string, title: string) {
+    const ids = tasks.map((task) => parseInt(task.id.split("T")[1], 10)) || [];
+    const maxId = ids.length > 0 ? Math.max(...ids) : 0;
+    setTasks((prev) => [
+      ...prev,
+      { id: "T" + (maxId + 1).toString(), columnId, title },
+    ]);
+  }
+};
+
+export default KanbanBoard;
+
+/*  For code quality, Removed feature for keyboard events because of unreadable code and clutter (untill next alternative ) */
+
+/*
+
+
+  const [canChangeFocus, setCanChangeFocus] = useState<boolean>(true);
+
+  const [focusedColumnIndex, setFocusedColumnIndex] = useState<number | null>(
+    null
+  );
+  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null);
+
 
   // Update focuses/select.
   useEffect(() => {
@@ -242,165 +404,6 @@ const KanbanBoard = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [focusedColumnIndex, focusedTaskIndex, columns, tasks]);
+  }, [focusedColumnIndex, focusedTaskIndex, columns, tasks]); 
 
-  return (
-    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 auto-rows-auto ">
-      <DndContext
-        collisionDetection={closestCenter}
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragOver={onDragOver}
-      >
-        <SortableContext items={columnIds}>
-          {columns.map((column) => (
-            <Column
-              onDeleteTask={deleteTask}
-              key={column.id}
-              column={column}
-              onDeleteColumn={deleteColumn}
-              onAddTask={addTask}
-              tasks={tasks.filter((task) => task.columnId === column.id)}
-            />
-          ))}
-        </SortableContext>
-
-        <NewColumn onAddNewColumn={addNewColumn} columns={columns} />
-
-        <DragOverlay>
-          {activeTask ? (
-            <div className="w-full border bg-gray-50 px-2 py-2 rounded-lg font-medium text-sm">
-              {activeTask.title}
-            </div>
-          ) : activeColumn ? (
-            <Column
-              onDeleteTask={deleteTask}
-              key={activeColumn.id}
-              column={activeColumn}
-              onDeleteColumn={deleteColumn}
-              onAddTask={addTask}
-              tasks={tasks.filter((task) => task.columnId === activeColumn.id)}
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    </div>
-  );
-
-  //additional functions
-  function onDragStart(e: DragEndEvent) {
-    console.log("Drag start", e);
-    //prevent selection change after selecting an element
-    setCanChangeFocus(false);
-    const activeType = e.active.data.current?.type;
-    if (activeType === "task") {
-      const activeTask = tasks.find((task) => task.id === e.active.id) || null;
-      setActiveTask(activeTask);
-    } else if (activeType === "column") {
-      const activeColumn =
-        columns.find((column) => column.id === e.active.id) || null;
-      setActiveColumn(activeColumn);
-    }
-  }
-
-  //functions
-  function onDragEnd(e: DragEndEvent) {
-    console.log("Drag end", e);
-    setCanChangeFocus(true);
-    setActiveColumn(null);
-    setActiveTask(null);
-    const { active, over } = e;
-    const activeType = active.data.current?.type;
-
-    if (!over) return;
-
-    if (activeType === "column") {
-      // Handle column reordering
-      const activeIndex = columns.findIndex((col) => col.id === active.id);
-      const overIndex = columns.findIndex((col) => col.id === over.id);
-
-      if (activeIndex !== overIndex && overIndex !== -1) {
-        const newColumns = arrayMove(columns, activeIndex, overIndex);
-        setColumns(newColumns);
-      }
-    } else if (activeType === "task") {
-      // Handle task dragging
-      const activeTaskIndex = tasks.findIndex((task) => task.id === active.id);
-      const overType = over.data.current?.type;
-
-      if (overType === "task") {
-        // Reordering tasks within the same column
-        const overTaskIndex = tasks.findIndex((task) => task.id === over.id);
-        if (activeTaskIndex !== overTaskIndex) {
-          const newTasks = arrayMove(tasks, activeTaskIndex, overTaskIndex);
-          setTasks(newTasks);
-        }
-      } else if (overType === "column") {
-        // Moving tasks between columns
-        const overColumnId = over.id;
-
-        setTasks((prevTasks) => {
-          const updatedTasks = [...prevTasks];
-          updatedTasks[activeTaskIndex].columnId = overColumnId.toString();
-          return updatedTasks;
-        });
-      }
-    }
-  }
-
-  function onDragOver(e: DragOverEvent) {
-    const isActiveTask = e.active.data.current?.type === "task";
-    const isOverTask = e.over?.data.current?.type === "task";
-
-    // If dragging a task
-    if (isActiveTask) {
-      if (isOverTask) {
-        // Handle task reorder inside the same column
-        const activeIndex = tasks.findIndex((task) => task.id === e.active.id);
-        const overIndex = tasks.findIndex((task) => task.id === e.over?.id);
-
-        if (activeIndex !== overIndex) {
-          const newTasks = arrayMove(tasks, activeIndex, overIndex);
-          setTasks(newTasks);
-          tasks[activeIndex].columnId = tasks[overIndex].columnId;
-        }
-      } else {
-        // Dropping task on an empty column (no task)
-        const overColumnId = e.over?.id;
-        if (overColumnId) {
-          setTasks((prevTasks) => {
-            const activeIndex = prevTasks.findIndex(
-              (task) => task.id === e.active.id
-            );
-            const newTasks = [...prevTasks];
-            newTasks[activeIndex].columnId = overColumnId.toString();
-            return newTasks;
-          });
-        }
-      }
-    }
-  }
-
-  function addNewColumn(id: string, title: string) {
-    setColumns((columns) => [...columns, { id, title }]);
-  }
-
-  function deleteColumn(id: string) {
-    setColumns(() => columns.filter((col) => col.id !== id));
-  }
-  function deleteTask(id: string) {
-    setTasks(() => tasks.filter((task) => task.id !== id));
-  }
-
-  function addTask(columnId: string, title: string) {
-    const ids = tasks.map((task) => parseInt(task.id.split("T")[1], 10)) || [];
-    const maxId = ids.length > 0 ? Math.max(...ids) : 0;
-    setTasks((prev) => [
-      ...prev,
-      { id: "T" + (maxId + 1).toString(), columnId, title },
-    ]);
-  }
-};
-
-export default KanbanBoard;
+  */
